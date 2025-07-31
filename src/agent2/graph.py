@@ -40,8 +40,18 @@ async def call_model(state: State, config: RunnableConfig) -> Dict[str, Any]:
     """
     configuration = config["configurable"]
     return {
-        "message": "agent graph invoked successfully. "
+        "message": "[agent2] call_model invoked successfully. "
                    f'Configured with {configuration.get("my_configurable_param")}'
+    }
+
+
+async def message_invert(state: State) -> Dict[str, Any]:
+    """Process input and returns output.
+
+    Can use runtime configuration to alter behavior.
+    """
+    return {
+        "message": "[agent2] message_invert invoked successfully. "
     }
 
 
@@ -49,6 +59,8 @@ async def call_model(state: State, config: RunnableConfig) -> Dict[str, Any]:
 graph = (
     StateGraph(State, config_schema=Configuration)
     .add_node(call_model)
+    .add_node(message_invert)
     .add_edge("__start__", "call_model")
-    .compile(name="New Graph")
+    .add_edge("call_model", "message_invert")
+    .compile(name="Agent2 Graph")
 )
