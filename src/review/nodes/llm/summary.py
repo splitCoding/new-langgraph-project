@@ -5,15 +5,23 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
 
-from src.review.nodes.best_review_candidates import LLMName
+from src.review.models import models
 from src.review.prompts import prompts
 from src.review.state.state import State
 
 
 class ReviewSummary(BaseModel):
-    id: str = Field(description="리뷰의 고유 ID")
-    title: str = Field(description="리뷰의 핵심 내용을 한 줄로 요약한 제목")
-    summary: str = Field(description="리뷰의 주요 내용을 1개의 문장으로 요약한 내용")
+    id: int = Field(description="리뷰의 고유 ID")
+    results: list[dict] = Field(description="리뷰의 여러 제목과 요약을 포함한 리스트", examples=[
+        {
+            "title": "리뷰1의 핵심 내용을 한 줄로 요약한 제목1 ( 최대 10자 )",
+            "summary": "title 을 뒷밤침하는 간단한 부연 설명이나 요약 ( 구어체 )"
+        },
+        {
+            "title": "리뷰1의 핵심 내용을 한 줄로 요약한 제목2 ( 최대 10자 )",
+            "summary": "title 을 뒷밤침하는 간단한 부연 설명이나 요약 ( 구어체 )"
+        }
+    ])
 
 
 class ReviewSummaries(BaseModel):
@@ -21,7 +29,10 @@ class ReviewSummaries(BaseModel):
     summaries: List[ReviewSummary] = Field(description="각 리뷰에 대한 제목과 요약 목록")
 
 
-def generate_summary_node(state: State) -> dict:
+llm_model = models['gpt_4_1_mini']
+
+
+def generate_summary_node(state: State, ) -> dict:
     """[NODE] 최상위 리뷰들을 바탕으로 요약문을 생성합니다."""
     print("\n--- 6. 요약문 생성 (generate_summary) ---")
     best_reviews = state['aggregated_best_reviews']
@@ -43,11 +54,13 @@ def generate_summary_node(state: State) -> dict:
     # LLM을 사용하여 리뷰 요약 생성
     parser = PydanticOutputParser(pydantic_object=ReviewSummaries)
     prompt_template = ChatPromptTemplate.from_messages([
-        ("system", prompts['generate_summary'].system),
-        ("user", prompts['generate_summary'].user),
+        ("system", prompts['summary_generate'].system),
+        ("user", prompts['summary_generate'].user),
     ])
-
-    model = ChatOpenAI(model=LLMName.GPT_4_1_MINI, temperature=0.3)
+    model_kwargs = {"model": llm_model.name}
+    if llm_model.temperature is not None:
+        model_kwargs["temperature"] = llm_model.temperature
+    model = ChatOpenAI(**model_kwargs)
     chain = prompt_template | model | parser
 
     # 리뷰 목록을 문자열로 변환
@@ -61,19 +74,20 @@ def generate_summary_node(state: State) -> dict:
             "review_list": review_list_str
         })
 
+        print(f"-> 요약 생성 완료: {response}")
+
         # Pydantic 모델에서 딕셔너리로 변환
         results = [
             {
                 "id": summary.id,
-                "title": summary.title,
-                "summary": summary.summary
+                "results": summary.results
             }
             for summary in response.summaries
         ]
 
         print(f"-> 생성된 요약 개수: {len(results)}")
         for i, result in enumerate(results):
-            print(f"   리뷰 {i + 1} 제목: {result['title']}")
+            print(f"   리뷰 {i + 1} 제목: {[r['title'] for r in result['results']]}")
 
         return {
             "results": results,

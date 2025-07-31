@@ -5,26 +5,29 @@ Returns a predefined response. Replace logic and configuration as needed.
 
 from __future__ import annotations
 
-from src.agent.graph import State
-# Define the graph
 from src.review.nodes import (
     # 리뷰 수집
     fetch_reviews_node,
     # 후보 선택
     use_llm_node, llm1_select, llm2_select, llm3_select, check_review_exist,
-    # 집계 및 재고
-    aggregate_best_node, check_inventory_node,
     # 재순위 매기기
     rerank_node,
-    # 생성 작업
-    generate_summary_node, generate_image_node,
     # DB 업데이트
-    update_db_node, check_summary_quality_node
+    update_db_node
 )
-from src.review.util import check_summary_quality_with_retry_limit
+# Define the graph
+from src.review.nodes.llm import (
+    # 후보 선택
+    # 집계 및 재고
+    aggregate_best_node, check_inventory_node,
+    # 생성 작업
+    generate_summary_node, generate_image_node, check_summary_quality_node,
+)
+from src.review.state import State
+from src.review.condition_checker import check_summary_quality_with_retry_limit
 from src.util.graph_generator import create_graph
 
-nodes = {
+nodes: dict[str, dict] = {
     "fetch_reviews": {
         "is_start": True,
         "node": fetch_reviews_node,

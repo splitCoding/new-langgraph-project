@@ -1,4 +1,5 @@
 import random
+from collections import defaultdict
 from typing import List
 
 from langchain_core.output_parsers import PydanticOutputParser
@@ -6,10 +7,9 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
 
+from src.review.models import models
 from src.review.prompts import prompts
-from src.review.nodes.best_review_candidates import LLMName
 from src.review.state.state import State
-from collections import defaultdict
 
 
 class BestReview(BaseModel):
@@ -19,6 +19,9 @@ class BestReview(BaseModel):
 class BestReviews(BaseModel):
     """선택된 최적 리뷰들의 ID 목록을 담는 데이터 구조"""
     best_reviews: List[BestReview] = Field(description="주어진 초점에 가장 부합하는 대표 리뷰들의 ID 목록")
+
+
+llm_model = models['gpt_4_1_mini']
 
 
 def aggregate_best_node(state: State) -> dict:
@@ -49,7 +52,10 @@ def aggregate_best_node(state: State) -> dict:
         ("system", prompts['aggregate_best'].system),
         ("user", prompts['aggregate_best'].user),
     ])
-    model = ChatOpenAI(model=LLMName.GPT_4_1_MINI, temperature=0)
+    model_kwargs = {"model": llm_model.name}
+    if llm_model.temperature is not None:
+        model_kwargs["temperature"] = llm_model.temperature
+    model = ChatOpenAI(**model_kwargs)
     chain = prompt_template | model | parser
 
     review_list_str = "\n".join([
