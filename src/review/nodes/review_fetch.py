@@ -1,4 +1,4 @@
-from src.review.data_source import fetch_review
+from src.util.data_source import fetch_data
 from src.review.state.state import State
 
 
@@ -35,7 +35,7 @@ def fetch_reviews_node(state: State) -> dict:
             LIMIT %s
             """
 
-    reviews = fetch_review(query, (mallId, shopId, search_review_max_count))
+    reviews = fetch_data(query, (mallId, shopId, search_review_max_count))
     print(f"-> {len(reviews['data'])}개의 리뷰를 성공적으로 가져왔습니다.")
     return {
         "reviews": reviews['data'],

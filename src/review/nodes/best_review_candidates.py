@@ -3,6 +3,7 @@ from typing import List
 
 from pydantic import BaseModel, Field
 
+from src.review.prompts import prompts
 from src.review.cache import get_cache
 from src.review.state.state import State
 
@@ -35,7 +36,7 @@ class LLMConfig:
 
 
 # LLM 설정들
-LLM_CONFIGS = {
+LLM_CONFIGS: dict[LLMName, LLMConfig] = {
     LLMName.GPT_3_5_TURBO: LLMConfig("gpt-3.5-turbo", 0),
     LLMName.GPT_4_1_NANO: LLMConfig("gpt-4.1-nano", 0),
     LLMName.GPT_4_1_MINI: LLMConfig("gpt-4.1-mini", 0),
@@ -87,25 +88,17 @@ def create_llm_selector_node(llm_name: LLMName, focus_instruction: str):
 
         print(f"🔄 캐시 미스 - LLM 호출 진행")
 
-        prompt = """
-            당신은 고객 리뷰 분석 전문가입니다. 주어진 리뷰 목록에서 특정 초점에 맞춰 고객들에게 가장 유용하고 대표적인 리뷰들을 선택해야 합니다.
-            선택된 리뷰의 ID, 리뷰의 평가 score 를 JSON 형식으로 반환해 주세요.
-            평가 score 는 0에서 100 사이의 정수로, 리뷰의 유용성, 신뢰성, 정보량 등을 종합적으로 평가한 점수입니다.
-            당신의 분석 초점은 다음과 같습니다: {focus}
-
-            {format_instructions}
-        """
         parser = PydanticOutputParser(pydantic_object=BestReviews)
         prompt = ChatPromptTemplate.from_messages([
-            ("system", prompt),
-            ("user", "다음은 고객 리뷰 목록입니다:\n\n{review_list}\n\n위 목록에서 당신의 분석 초점에 맞춰 최적의 리뷰 {candidate_count}개를 선택해 주세요.")
+            ("system", prompts['candidate_select'].system),
+            ("user", prompts['candidate_select'].user)
         ])
-        
+
         # temperature가 None인 경우 ChatOpenAI에 전달하지 않음
         model_kwargs = {"model": llm_config.model}
         if llm_config.temperature is not None:
             model_kwargs["temperature"] = llm_config.temperature
-        
+
         model = ChatOpenAI(**model_kwargs)
         chain = prompt | model | parser
 

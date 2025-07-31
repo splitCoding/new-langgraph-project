@@ -6,6 +6,7 @@ from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
 
 from src.review.nodes.best_review_candidates import LLMName
+from src.review.prompts import prompts
 from src.review.state.state import State
 
 
@@ -40,52 +41,10 @@ def generate_summary_node(state: State) -> dict:
         }
 
     # LLM을 사용하여 리뷰 요약 생성
-    prompt = """
-당신은 고객 리뷰 요약 전문가입니다. 주어진 리뷰들을 분석하여 각각에 대해 제목과 요약을 생성해야 합니다.
-
-응답은 반드시 다음 JSON 형식으로만 제공해주세요:
-{{
-  "summaries": [
-    {{
-      "id": "리뷰1의 ID",
-      "title": "리뷰1의 핵심 내용을 한 줄로 요약한 제목",
-      "summary": "title 을 뒷밤침하는 간단한 부연 설명이나 요약"
-    }},
-    {{
-      "id": "리뷰2의 ID",
-      "title": "리뷰2의 핵심 내용을 한 줄로 요약한 제목", 
-      "summary": "title 을 뒷밤침하는 간단한 부연 설명이나 요약"
-    }}
-  ]
-}}
-
-요약할 때는 다음 사항을 고려해주세요:
-- 고객이 가장 중요하게 언급한 부분을 우선적으로 포함
-- 긍정적 의견 위주로 반영
-- 구체적인 사용 경험이나 특징을 포함
-- 요약의 결과가 다른 구매자들에게 정보를 전달하는 느낌의 친숙한 내용으로 작성
-
-반드시 유효한 JSON 형식으로만 응답해주세요.
-
-ex. {{
-        "summaries": [
-        {{
-            "id": "12345",
-            "title": "모두가 써봤으면 싶어 리뷰 남겨요",
-            "summary": "좁쌀과 요철에 효과적이고 피부 장벽이 튼튼해지는게 느껴져요"
-        }},
-        {{
-            "id": "67890",
-            "title": "발랐을 때 윤기가 달라요",
-            "summary": "남편도 자꾸 제꺼 발라요. 향도 좋고 무겁지 않아서 좋아요"
-        }}
-    }}
-"""
-
     parser = PydanticOutputParser(pydantic_object=ReviewSummaries)
     prompt_template = ChatPromptTemplate.from_messages([
-        ("system", prompt),
-        ("user", "다음 리뷰들을 각각 분석하여 JSON 형식으로 제목과 요약을 생성해주세요:\n\n{review_list}")
+        ("system", prompts['generate_summary'].system),
+        ("user", prompts['generate_summary'].user),
     ])
 
     model = ChatOpenAI(model=LLMName.GPT_4_1_MINI, temperature=0.3)

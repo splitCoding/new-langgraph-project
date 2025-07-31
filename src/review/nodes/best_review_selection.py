@@ -6,6 +6,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
 
+from src.review.prompts import prompts
 from src.review.nodes.best_review_candidates import LLMName
 from src.review.state.state import State
 from collections import defaultdict
@@ -43,26 +44,10 @@ def aggregate_best_node(state: State) -> dict:
     # ID를 기준으로 중복 제거
     # unique_reviews = list({review['id']: review for review in all_selected}.values())
     print(f"-> 취합된 리뷰 (중복 제거 후): {[r['id'] for r in candidates]}")
-
-    prompt = """
-당신은 고객 리뷰 분석 전문가입니다. 고객들에게 가장 유용하고 대표적인 리뷰 후보들 중 최종 BEST 리뷰를 선택해야 합니다.
-score는 0에서 100 사이의 정수로 리뷰의 유용성, 신뢰성, 정보량 등을 종합적으로 평가한 후보 평가 점수입니다.
-
-응답은 반드시 다음 JSON 형식으로만 제공해주세요:
-{{
-  "best_reviews": [
-    {{"id": 선택된리뷰ID1}},
-    {{"id": 선택된리뷰ID2}}
-  ]
-}}
-
-JSON 형식을 정확히 지켜서 응답해주세요.
-            """
     parser = PydanticOutputParser(pydantic_object=BestReviews)
     prompt_template = ChatPromptTemplate.from_messages([
-        ("system", prompt),
-        ("user",
-         "다음은 BEST 고객 리뷰 후보로 선택된 리뷰 목록입니다:\n\n{review_list}\n\n위 목록에서 최적의 리뷰 {review_count}개를 선택해 주세요.")
+        ("system", prompts['aggregate_best'].system),
+        ("user", prompts['aggregate_best'].user),
     ])
     model = ChatOpenAI(model=LLMName.GPT_4_1_MINI, temperature=0)
     chain = prompt_template | model | parser

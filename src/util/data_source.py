@@ -17,7 +17,7 @@ DB_CONFIG = {
 }
 
 
-def fetch_review(query: str, params: tuple = ()) -> dict:
+def fetch_data(query: str, params: tuple = ()) -> dict:
     data = []
     try:
         # 데이터베이스에 연결
