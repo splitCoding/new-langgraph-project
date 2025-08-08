@@ -1,7 +1,9 @@
 {
   "dependencies": ["."],
   "graphs": {
-    "agent": "./src/agent/graph.py:graph"
+    "review": "./src/review/graph_refactored.py:graph",
+    "review_preference": "./src/review_preference/graph.py:graph",
+    "title_summary": "./src/title_summary/graph.py:graph"
   },
   "env": ".env",
   "image_distro": "wolfi"
