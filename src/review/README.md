@@ -1,36 +1,49 @@
 # Review Package
 
-LangGraph 기반 리뷰 분석 및 점수 매기기 에이전트
+LangGraph 기반 BEST 리뷰 선정 시스템의 핵심 분석 엔진입니다.
 
-## 구조
+## 📁 구조
 
 ```
 src/review/
-├── __init__.py
-├── config.py           # 설정 및 구성
-├── graph.py            # 기존 그래프 (레거시)
-├── graph_refactored.py # 리팩토링된 그래프
-├── states.py           # 상태 정의
-├── nodes/              # 노드 구현
+├── __init__.py         # 패키지 초기화
+├── graph.py            # 메인 리뷰 분석 그래프
+├── states.py           # 상태 정의 및 타입
+├── nodes/              # 그래프 노드 구현
 │   ├── __init__.py
-│   ├── data_loader.py  # 데이터 로딩
-│   ├── filters.py      # 필터링
-│   ├── fusion.py       # 후보 병합
-│   └── scoring.py      # 점수 매기기
-├── tools/              # LLM 도구
+│   ├── data_loader.py  # 데이터베이스에서 리뷰 로딩
+│   ├── filters.py      # 리뷰 필터링 및 전처리
+│   ├── fusion.py       # 후보 리뷰 병합 및 최종 선정
+│   └── scoring.py      # LLM 기반 리뷰 점수 매기기
+├── tools/              # LangGraph 도구들
 │   ├── __init__.py
-│   ├── database.py     # MySQL 데이터베이스 도구
+│   ├── database.py     # MySQL 데이터베이스 연동 도구
 │   └── moderation.py   # OpenAI 컨텐츠 모더레이션
-└── utils/              # 유틸리티
+└── utils/              # 공통 유틸리티
     ├── __init__.py
-    └── logging.py      # 로깅 설정
+    ├── logging.py      # 로깅 설정
+    ├── html_processor.py   # HTML 텍스트 처리
+    └── token_estimator.py  # 토큰 추정 및 텍스트 청킹
 ```
 
-## 기능
+## 🎯 주요 기능
 
-### 1. 데이터베이스 도구 (tools/database.py)
+### 🔍 지능형 리뷰 분석
+- **데이터 로딩**: MySQL DB에서 매장별 리뷰 자동 조회
+- **규칙 기반 필터링**: 기본 품질 기준으로 1차 필터링
+- **LLM 점수 매기기**: GPT-4를 활용한 정교한 리뷰 평가
+- **후보 병합**: 다중 기준 기반 최종 BEST 리뷰 선정
 
-MySQL에서 리뷰 데이터를 조회하는 도구:
+### 📊 다차원 평가 시스템
+- **품질 평가**: 리뷰 내용의 유용성과 신뢰성
+- **상세도 평가**: 제품 설명의 구체성과 완성도
+- **감정 분석**: 긍정적 톤과 고객 만족도
+- **경험 평가**: 실제 사용 경험의 깊이
+
+### 🛡️ 안전성 보장
+- **컨텐츠 모더레이션**: OpenAI API로 부적절한 내용 필터링
+- **HTML 안전 처리**: BeautifulSoup 기반 태그 정리
+- **토큰 관리**: 지능형 텍스트 청킹으로 LLM 한도 준수
 
 - 환경변수 기반 DB 설정
 - 미리 정의된 쿼리 및 커스텀 쿼리 지원
